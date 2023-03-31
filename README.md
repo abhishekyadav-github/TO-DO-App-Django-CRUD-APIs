@@ -1,6 +1,6 @@
 # TO-DO-App-Django API's
 
-Basic and simple API's around a To-Do application.
+Basic and simple CRUD API's around a To-Do application.
 
 1. GET - 
     http://localhost:8000/      - endpoint to see all tasks.
