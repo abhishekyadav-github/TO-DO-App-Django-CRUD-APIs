@@ -3,10 +3,10 @@ from tasks.serializers import TaskSerializer
 from django.http import JsonResponse
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
 # Create your views here.
-class HomeView(ListCreateAPIView):
+class ListCreateTaskView(ListCreateAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
 
@@ -34,3 +34,37 @@ class HomeView(ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return super().post(request, *args, **kwargs)
+
+class UpdateDestroyTaskView(RetrieveUpdateDestroyAPIView):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            task = Task.objects.get(pk=kwargs['pk'])
+            return Response(TaskSerializer(task).data)
+        except:
+            return Response(
+                {"404_Not_Found": f"Task with pk: {kwargs['pk']} not found."},
+                status.HTTP_404_NOT_FOUND
+                )
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = {
+            "title": request.data.get('title', None),
+        }
+        serializer = TaskSerializer(instance=instance, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        try:
+            self.perform_destroy(instance=instance)
+        except status.HTTP_404_NOT_FOUND:
+            pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
